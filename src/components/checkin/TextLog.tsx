@@ -13,9 +13,9 @@ function TextLog() {
       textLog = textLog.concat(
         ...entry.map(
           dat =>
-            `\n- ${dat.duration.toFixed(2)} hr${dat.duration === 1 ? "" : "s"} #${dat.tag} ${dat.activities.join(
-              ", ",
-            )}`,
+            `\n- ${dat.duration.toFixed(2)} hr${dat.duration === 1 ? "" : "s"} #${
+              dat.tag
+            } ${dat.activities.join(", ")}`,
         ),
       );
       textLog += "\n\n";
@@ -43,7 +43,12 @@ function TextLog() {
         }}
         value={text}
       />
-      <Button variant="outlined" color="inherit" onClick={() => navigator.clipboard.writeText(text)} sx={{ mt: 1 }}>
+      <Button
+        variant="outlined"
+        color="inherit"
+        onClick={() => navigator.clipboard.writeText(text)}
+        sx={{ mt: 1 }}
+      >
         Copy to clipboard
       </Button>
     </>

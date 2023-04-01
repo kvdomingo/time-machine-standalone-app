@@ -1,6 +1,5 @@
 import { Dispatch, SetStateAction } from "react";
 import { Grid, List, ListItem, Pagination } from "@mui/material";
-import useFetchCheckIns from "../../hooks/useFetchCheckIns";
 import { useSelector } from "../../store/hooks";
 import { selectCheckIns, selectCount } from "../../store/timeSlice";
 import CheckInAddEdit from "./CheckInAddEdit";
@@ -13,13 +12,7 @@ interface CheckInListProps {
 
 function CheckInList({ page, setPage }: CheckInListProps) {
   const checkIns = useSelector(selectCheckIns);
-  const fetchCheckIns = useFetchCheckIns();
   const count = useSelector(selectCount);
-
-  function handlePageChange(e: any, page: number) {
-    setPage(page);
-    fetchCheckIns(page);
-  }
 
   return (
     <>
@@ -41,14 +34,22 @@ function CheckInList({ page, setPage }: CheckInListProps) {
         <ListItem>
           <CheckInAddEdit />
         </ListItem>
-        {checkIns.length > 0 ? (
-          checkIns.map(c => <CheckInItem checkIn={c} key={c.id} />)
+        {Object.keys(checkIns).length > 0 ? (
+          Object.entries(checkIns).map(([id, c]) => (
+            <CheckInItem checkIn={c} key={id} />
+          ))
         ) : (
-          <ListItem sx={{ color: "text.secondary" }}>No check ins within the selected time period</ListItem>
+          <ListItem sx={{ color: "text.secondary" }}>
+            No check ins within the selected time period
+          </ListItem>
         )}
       </List>
       <Grid container justifyContent="center">
-        <Pagination count={Math.ceil(count / 10)} page={page} onChange={handlePageChange} />
+        <Pagination
+          count={Math.ceil(count / 10)}
+          page={page}
+          onChange={(_, page) => setPage(page)}
+        />
       </Grid>
     </>
   );

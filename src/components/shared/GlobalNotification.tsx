@@ -1,7 +1,10 @@
 import { useEffect, useState } from "react";
 import { Alert, Snackbar } from "@mui/material";
 import { useDispatch, useSelector } from "../../store/hooks";
-import { selectGlobalNotification, updateGlobalNotification } from "../../store/timeSlice";
+import {
+  selectGlobalNotification,
+  updateGlobalNotification,
+} from "../../store/timeSlice";
 
 function GlobalNotification() {
   const notificationState = useSelector(selectGlobalNotification);
@@ -37,7 +40,11 @@ function GlobalNotification() {
         horizontal: "center",
       }}
     >
-      <Alert onClose={handleClose} severity={notificationState.type} sx={{ width: "100%" }}>
+      <Alert
+        onClose={handleClose}
+        severity={notificationState.type}
+        sx={{ width: "100%" }}
+      >
         {notificationState.message}
       </Alert>
     </Snackbar>

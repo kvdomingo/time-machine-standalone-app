@@ -1,4 +1,4 @@
-export interface CheckInResponse {
+export interface CheckIn {
   id: string;
   created: string;
   modified: string;
@@ -17,17 +17,10 @@ export interface CheckInForm {
   activities: string;
 }
 
-export interface PaginatedResponse<T> {
-  count: number;
-  next: string | null;
-  previous: string | null;
-  results: T;
-}
-
 export interface TextLogItem {
   tag: string;
   duration: number;
   activities: string[];
 }
 
-export type TextLogResponse = Record<string, TextLogItem[]>;
+export type TextLog = Record<string, TextLogItem[]>;

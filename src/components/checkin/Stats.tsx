@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
 import Plot from "react-plotly.js";
 import { Grid, Paper, Tab, Tabs } from "@mui/material";
-import { CheckInResponse } from "../../api/types/checkIn";
+import { CheckIn } from "../../types/checkIn";
 
 interface StatsProps {
-  checkIns: CheckInResponse[];
+  checkIns: CheckIn[];
   byTag: boolean;
 }
 
@@ -21,7 +21,9 @@ enum ChartType {
 function Stats({ checkIns, byTag }: StatsProps) {
   const [chartSelector, setChartSelector] = useState<ChartType>(ChartType.Pie);
   const [data, setData] = useState<any>({});
-  const uniqueTags = byTag ? [...new Set(checkIns.map(c => c.activities))] : [...new Set(checkIns.map(c => c.tag))];
+  const uniqueTags = byTag
+    ? [...new Set(checkIns.map(c => c.activities))]
+    : [...new Set(checkIns.map(c => c.tag))];
 
   useEffect(() => {
     let stats: Data[] = uniqueTags.map(tag => ({ tag, value: 0 }));
@@ -60,7 +62,10 @@ function Stats({ checkIns, byTag }: StatsProps) {
   return (
     <Paper elevation={2} sx={{ p: 2 }}>
       <Grid container justifyContent="center">
-        <Tabs value={chartSelector} onChange={(e, newValue) => setChartSelector(newValue)}>
+        <Tabs
+          value={chartSelector}
+          onChange={(e, newValue) => setChartSelector(newValue)}
+        >
           <Tab label="pie" />
           <Tab label="bar" />
         </Tabs>

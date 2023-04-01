@@ -2,31 +2,32 @@ import { useState } from "react";
 import { Delete, Edit } from "@mui/icons-material";
 import { Grid, IconButton, ListItem, Typography } from "@mui/material";
 import moment from "moment/moment";
-import api from "../../api";
-import { CheckInResponse } from "../../api/types/checkIn";
-import useFetchCheckIns from "../../hooks/useFetchCheckIns";
+import { useDispatch } from "../../store/hooks";
+import { deleteCheckIn } from "../../store/timeSlice";
+import { CheckIn } from "../../types/checkIn";
 import { DEFAULT_TIME_FORMAT } from "../../utils/constants";
 import CheckInAddEdit from "./CheckInAddEdit";
 
 interface CheckInItemProps {
-  checkIn: CheckInResponse;
+  checkIn: CheckIn;
 }
 
 function CheckInItem({ checkIn }: CheckInItemProps) {
-  const fetchCheckIns = useFetchCheckIns();
+  const dispatch = useDispatch();
   const [isEditing, setIsEditing] = useState(false);
 
   function handleDeleteCheckIn(id: string) {
-    api.checkin
-      .delete(id)
-      .then(() => fetchCheckIns())
-      .catch(err => console.error(err.message));
+    dispatch(deleteCheckIn(id));
   }
 
   return (
     <ListItem>
       {isEditing ? (
-        <CheckInAddEdit isEditing stopEditing={() => setIsEditing(false)} editingProps={checkIn} />
+        <CheckInAddEdit
+          isEditing
+          stopEditing={() => setIsEditing(false)}
+          editingProps={checkIn}
+        />
       ) : (
         <Grid container alignItems="center">
           <Grid item xs={12} md={1}>
@@ -44,14 +45,21 @@ function CheckInItem({ checkIn }: CheckInItemProps) {
             <Typography variant="body1">{checkIn.activities}</Typography>
             <Typography variant="body1" ml={1}>
               ({moment(checkIn.start_time, "HH:mm:ss").format(DEFAULT_TIME_FORMAT)} -{" "}
-              {moment(checkIn.start_time, "HH:mm:ss").add(checkIn.duration, "hours").format("HH:mm")})
+              {moment(checkIn.start_time, "HH:mm:ss")
+                .add(checkIn.duration, "hours")
+                .format("HH:mm")}
+              )
             </Typography>
           </Grid>
           <Grid item xs={2} md={2} container justifyContent={{ md: "flex-end" }}>
             <IconButton color="info" onClick={() => setIsEditing(true)} size="small">
               <Edit />
             </IconButton>
-            <IconButton color="error" onClick={() => handleDeleteCheckIn(checkIn.id)} size="small">
+            <IconButton
+              color="error"
+              onClick={() => handleDeleteCheckIn(checkIn.id)}
+              size="small"
+            >
               <Delete />
             </IconButton>
           </Grid>

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { Helmet } from "react-helmet";
 import { AccessTime, ArrowDropDown } from "@mui/icons-material";
 import {
@@ -15,9 +15,8 @@ import {
 } from "@mui/material";
 import { DatePicker } from "@mui/x-date-pickers";
 import moment from "moment";
-import useFetchCheckIns from "../../hooks/useFetchCheckIns";
 import { useDispatch, useSelector } from "../../store/hooks";
-import { selectStartDate, selectTextLog, updateEndDate, updateStartDate } from "../../store/timeSlice";
+import { selectTextLog, updateEndDate, updateStartDate } from "../../store/timeSlice";
 import { ViewOption } from "../../types/dateRangeViewOption";
 import { DEFAULT_DATE_FORMAT } from "../../utils/constants";
 import CheckInList from "./CheckInList";
@@ -53,17 +52,12 @@ const VIEW_OPTIONS: ViewOption[] = [
 function CheckInView() {
   const dispatch = useDispatch();
   const textLog = useSelector(selectTextLog);
-  const fetchCheckIns = useFetchCheckIns();
   const [page, setPage] = useState(1);
   const [selectedPeriod, setSelectedPeriod] = useState<ViewOption>(VIEW_OPTIONS[0]);
   const [openPeriodSelectMenu, setOpenPeriodSelectMenu] = useState(false);
   const [customRangeStart, setCustomRangeStart] = useState(moment().startOf("isoWeek"));
   const [customRangeEnd, setCustomRangeEnd] = useState(moment().endOf("day"));
   const periodSelectorRef = useRef<HTMLDivElement>(null!);
-
-  useEffect(() => {
-    fetchCheckIns(page);
-  }, [selectedPeriod, customRangeStart, customRangeEnd]);
 
   function calculateCheckInHours() {
     return Object.values(textLog)
@@ -124,7 +118,9 @@ function CheckInView() {
                     }}
                   >
                     <Paper>
-                      <ClickAwayListener onClickAway={() => setOpenPeriodSelectMenu(false)}>
+                      <ClickAwayListener
+                        onClickAway={() => setOpenPeriodSelectMenu(false)}
+                      >
                         <MenuList autoFocusItem>
                           {VIEW_OPTIONS.map(v => (
                             <MenuItem
@@ -152,7 +148,9 @@ function CheckInView() {
                       dispatch(updateStartDate(start.format(DEFAULT_DATE_FORMAT)));
                     }}
                     value={customRangeStart}
-                    renderInput={params => <TextField {...params} fullWidth label="Start date" />}
+                    renderInput={params => (
+                      <TextField {...params} fullWidth label="Start date" />
+                    )}
                     disableFuture
                   />
                 </Grid>
@@ -164,7 +162,9 @@ function CheckInView() {
                       dispatch(updateEndDate(end.format(DEFAULT_DATE_FORMAT)));
                     }}
                     value={customRangeEnd}
-                    renderInput={params => <TextField {...params} fullWidth label="End date" />}
+                    renderInput={params => (
+                      <TextField {...params} fullWidth label="End date" />
+                    )}
                   />
                 </Grid>
               </>
@@ -174,7 +174,8 @@ function CheckInView() {
         <Grid item md={4}>
           Going on{" "}
           <b>
-            {calculateCheckInHours().toFixed(2)} hour{calculateCheckInHours() !== 1 && "s"}
+            {calculateCheckInHours().toFixed(2)} hour
+            {calculateCheckInHours() !== 1 && "s"}
           </b>
         </Grid>
         <Grid item md={8}>

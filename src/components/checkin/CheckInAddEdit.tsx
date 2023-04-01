@@ -1,13 +1,11 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Add, Check, Close } from "@mui/icons-material";
 import { Autocomplete, Button, Grid, IconButton, TextField } from "@mui/material";
 import { TimePicker } from "@mui/x-date-pickers";
 import moment from "moment";
-import api from "../../api";
-import { CheckInForm, CheckInResponse } from "../../api/types/checkIn";
-import useFetchCheckIns from "../../hooks/useFetchCheckIns";
-import { useSelector } from "../../store/hooks";
-import { selectTagCache } from "../../store/timeSlice";
+import { useDispatch, useSelector } from "../../store/hooks";
+import { addCheckIn, selectTagCache, updateCheckIn } from "../../store/timeSlice";
+import { CheckIn, CheckInForm } from "../../types/checkIn";
 import { DEFAULT_DATE_FORMAT, DEFAULT_TIME_FORMAT } from "../../utils/constants";
 
 enum CheckInStatus {
@@ -19,14 +17,19 @@ enum CheckInStatus {
 interface NewCheckInProps {
   isEditing: boolean;
   stopEditing: () => void;
-  editingProps?: CheckInResponse;
+  editingProps?: CheckIn;
 }
 
 function CheckInAddEdit({ isEditing, stopEditing, editingProps }: NewCheckInProps) {
+  const dispatch = useDispatch();
   const initialCheckIn: CheckInForm = {
     duration: isEditing ? editingProps!.duration : 0,
-    start_time: isEditing ? editingProps!.start_time : moment().format(DEFAULT_TIME_FORMAT),
-    record_date: isEditing ? editingProps!.record_date : moment().format(DEFAULT_DATE_FORMAT),
+    start_time: isEditing
+      ? editingProps!.start_time
+      : moment().format(DEFAULT_TIME_FORMAT),
+    record_date: isEditing
+      ? editingProps!.record_date
+      : moment().format(DEFAULT_DATE_FORMAT),
     tag: isEditing ? editingProps!.tag : "",
     activities: isEditing ? editingProps!.activities : "",
   };
@@ -39,7 +42,6 @@ function CheckInAddEdit({ isEditing, stopEditing, editingProps }: NewCheckInProp
   };
 
   const tagCache = useSelector(selectTagCache);
-  const fetchCheckIns = useFetchCheckIns();
   const [endTime, setEndTime] = useState(
     isEditing
       ? moment(editingProps!.start_time, DEFAULT_TIME_FORMAT)
@@ -48,7 +50,9 @@ function CheckInAddEdit({ isEditing, stopEditing, editingProps }: NewCheckInProp
       : moment().format(DEFAULT_TIME_FORMAT),
   );
   const [newCheckInData, setNewCheckInData] = useState({ ...initialCheckIn });
-  const [formErrors, setFormErrors] = useState<typeof initialErrors>({ ...initialErrors });
+  const [formErrors, setFormErrors] = useState<typeof initialErrors>({
+    ...initialErrors,
+  });
   const [isCreating, setIsCreating] = useState(false);
   const [tagInputValue, setTagInputValue] = useState("");
 
@@ -104,7 +108,8 @@ function CheckInAddEdit({ isEditing, stopEditing, editingProps }: NewCheckInProp
   function handleChangeDuration(value: number) {
     let _startTime = moment(newCheckInData.start_time, DEFAULT_TIME_FORMAT);
     const _endTime = moment(_startTime).add(value, "hours");
-    if (_endTime.format(DEFAULT_TIME_FORMAT) !== endTime) setEndTime(_endTime.format(DEFAULT_TIME_FORMAT));
+    if (_endTime.format(DEFAULT_TIME_FORMAT) !== endTime)
+      setEndTime(_endTime.format(DEFAULT_TIME_FORMAT));
     setNewCheckInData(form => ({
       ...form,
       duration: value,
@@ -116,13 +121,20 @@ function CheckInAddEdit({ isEditing, stopEditing, editingProps }: NewCheckInProp
     (Object.keys(errors) as (keyof CheckInForm)[]).forEach(key => {
       if (key === "duration") {
         errors.duration =
-          !isNaN(parseFloat(String(newCheckInData.duration))) && parseFloat(String(newCheckInData.duration)) > 0
+          !isNaN(parseFloat(String(newCheckInData.duration))) &&
+          parseFloat(String(newCheckInData.duration)) > 0
             ? CheckInStatus.OK
             : CheckInStatus.NumberOnly;
       } else if (key === "tag") {
-        errors.tag = newCheckInData.tag.length > 0 ? CheckInStatus.OK : CheckInStatus.RequiredField;
+        errors.tag =
+          newCheckInData.tag.length > 0
+            ? CheckInStatus.OK
+            : CheckInStatus.RequiredField;
       } else {
-        errors[key] = (newCheckInData[key] as string).length > 0 ? CheckInStatus.OK : CheckInStatus.RequiredField;
+        errors[key] =
+          (newCheckInData[key] as string).length > 0
+            ? CheckInStatus.OK
+            : CheckInStatus.RequiredField;
       }
     });
     setFormErrors(errors);
@@ -137,28 +149,31 @@ function CheckInAddEdit({ isEditing, stopEditing, editingProps }: NewCheckInProp
     e.preventDefault();
     const errors = validateForm();
     if (Object.values(errors).some(Boolean)) return;
-    api.checkin
-      .create(newCheckInData)
-      .then(() => {
-        fetchCheckIns();
-        setIsCreating(false);
-        setNewCheckInData({ ...initialCheckIn });
-      })
-      .catch(err => console.error(err));
+
+    const body: CheckIn = {
+      id: crypto.randomUUID(),
+      created: moment().toISOString(),
+      modified: moment().toISOString(),
+      ...newCheckInData,
+    };
+    dispatch(addCheckIn(body));
+    setIsCreating(false);
+    setNewCheckInData({ ...initialCheckIn });
   }
 
   function handleEditCheckIn(e: any) {
     e.preventDefault();
     const errors = validateForm();
     if (Object.values(errors).some(Boolean)) return;
-    api.checkin
-      .update(editingProps!.id, newCheckInData)
-      .then(() => {
-        fetchCheckIns();
-        stopEditing();
-        setNewCheckInData({ ...initialCheckIn });
-      })
-      .catch(err => console.error(err));
+    const body: CheckIn = {
+      ...newCheckInData,
+      id: editingProps!.id,
+      created: editingProps!.created,
+      modified: moment().toISOString(),
+    };
+    dispatch(updateCheckIn(body));
+    stopEditing();
+    setNewCheckInData({ ...initialCheckIn });
   }
 
   return isCreating || isEditing ? (
@@ -206,7 +221,9 @@ function CheckInAddEdit({ isEditing, stopEditing, editingProps }: NewCheckInProp
         </Grid>
         <Grid item xs={12} md={1.75}>
           <TimePicker
-            onChange={val => handleChangeStartTime(val?.format(DEFAULT_TIME_FORMAT) ?? "00:00")}
+            onChange={val =>
+              handleChangeStartTime(val?.format(DEFAULT_TIME_FORMAT) ?? "00:00")
+            }
             value={moment(newCheckInData.start_time, DEFAULT_TIME_FORMAT)}
             renderInput={params => <TextField {...params} />}
             label="Start time"
@@ -215,7 +232,9 @@ function CheckInAddEdit({ isEditing, stopEditing, editingProps }: NewCheckInProp
         </Grid>
         <Grid item xs={12} md={1.75}>
           <TimePicker
-            onChange={val => handleChangeEndTime(val?.format(DEFAULT_TIME_FORMAT) ?? "00:00")}
+            onChange={val =>
+              handleChangeEndTime(val?.format(DEFAULT_TIME_FORMAT) ?? "00:00")
+            }
             value={moment(endTime, DEFAULT_TIME_FORMAT)}
             renderInput={params => <TextField {...params} />}
             label="End time"
@@ -237,7 +256,14 @@ function CheckInAddEdit({ isEditing, stopEditing, editingProps }: NewCheckInProp
             fullWidth
           />
         </Grid>
-        <Grid item xs={12} md container alignItems="center" justifyContent={{ xs: "center", md: "flex-end" }}>
+        <Grid
+          item
+          xs={12}
+          md
+          container
+          alignItems="center"
+          justifyContent={{ xs: "center", md: "flex-end" }}
+        >
           <IconButton
             onClick={() => {
               setNewCheckInData({ ...initialCheckIn });
@@ -254,7 +280,12 @@ function CheckInAddEdit({ isEditing, stopEditing, editingProps }: NewCheckInProp
     </form>
   ) : (
     <Grid container justifyContent="center">
-      <Button variant="text" color="primary" startIcon={<Add />} onClick={() => setIsCreating(true)}>
+      <Button
+        variant="text"
+        color="primary"
+        startIcon={<Add />}
+        onClick={() => setIsCreating(true)}
+      >
         Check In
       </Button>
     </Grid>

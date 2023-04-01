@@ -8,12 +8,18 @@ function LoggedInView() {
       <Container maxWidth={false}>
         <Grid container>
           <Grid item xs>
-            <Box component={Link} to="/" sx={{ textDecoration: "none", color: "text.primary" }}>
+            <Box
+              component={Link}
+              to="/"
+              sx={{ textDecoration: "none", color: "text.primary" }}
+            >
               <Typography variant="h3">Time Machine</Typography>
             </Box>
           </Grid>
           <Grid item xs={12}>
-            <Typography variant="h6">{dateFormat(new Date(), "dddd, d mmmm yyyy")}</Typography>
+            <Typography variant="h6">
+              {dateFormat(new Date(), "dddd, d mmmm yyyy")}
+            </Typography>
           </Grid>
         </Grid>
 

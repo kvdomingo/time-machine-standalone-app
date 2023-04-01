@@ -2,7 +2,7 @@ import { AlertColor } from "@mui/material";
 import { PayloadAction, createSlice } from "@reduxjs/toolkit";
 import { cloneDeep } from "lodash-es";
 import moment from "moment";
-import { CheckInResponse, TextLogResponse } from "../api/types/checkIn";
+import { CheckIn, TextLog } from "../types/checkIn";
 import { DEFAULT_DATE_FORMAT } from "../utils/constants";
 import { RootState } from "./store";
 
@@ -13,13 +13,12 @@ interface GlobalNotification {
 }
 
 export interface TimeState {
-  checkIns: CheckInResponse[];
+  checkIns: CheckIn[];
   count: number;
   startDate: string;
   endDate: string;
   tagCache: string[];
-  textLog: TextLogResponse;
-  apiRequestLoading: boolean;
+  textLog: TextLog;
   globalNotification: GlobalNotification;
 }
 
@@ -30,7 +29,6 @@ export const initialState: TimeState = {
   endDate: moment().format(DEFAULT_DATE_FORMAT),
   tagCache: [],
   textLog: {},
-  apiRequestLoading: false,
   globalNotification: {
     type: "info",
     visible: false,
@@ -42,8 +40,22 @@ export const timeSlice = createSlice({
   name: "time",
   initialState: cloneDeep(initialState),
   reducers: {
-    updateCheckIns(state, action: PayloadAction<CheckInResponse[]>) {
-      state.checkIns = action.payload;
+    addCheckIn(state, action: PayloadAction<CheckIn>) {
+      state.checkIns = [action.payload, ...state.checkIns];
+      state.tagCache = [...new Set([...state.tagCache, action.payload.tag])];
+    },
+    updateCheckIn(state, action: PayloadAction<CheckIn>) {
+      const index = state.checkIns.findIndex(c => c.id === action.payload.id);
+      if (index === -1) return;
+
+      state.checkIns[index] = action.payload;
+      state.tagCache = [...new Set([...state.tagCache, action.payload.tag])];
+    },
+    deleteCheckIn(state, action: PayloadAction<string>) {
+      const index = state.checkIns.findIndex(c => c.id === action.payload);
+      if (index === -1) return;
+
+      state.checkIns.splice(index, 1);
     },
     updateTagCache(state, action: PayloadAction<string[]>) {
       state.tagCache = action.payload;
@@ -57,11 +69,8 @@ export const timeSlice = createSlice({
     updateEndDate(state, action: PayloadAction<string>) {
       state.endDate = action.payload;
     },
-    updateTextLog(state, action: PayloadAction<TextLogResponse>) {
+    updateTextLog(state, action: PayloadAction<TextLog>) {
       state.textLog = action.payload;
-    },
-    updateApiRequestLoading(state, action: PayloadAction<boolean>) {
-      state.apiRequestLoading = action.payload;
     },
     updateGlobalNotification(state, action: PayloadAction<GlobalNotification>) {
       state.globalNotification = action.payload;
@@ -73,17 +82,23 @@ export const timeSlice = createSlice({
 });
 
 export const {
-  updateCheckIns,
-  updateApiRequestLoading,
+  addCheckIn,
+  updateCheckIn,
+  deleteCheckIn,
   updateGlobalNotification,
   updateTextLog,
   updateCount,
   updateTagCache,
   updateStartDate,
   updateEndDate,
+  resetTimeMachine,
 } = timeSlice.actions;
 
-export const selectCheckIns = (state: RootState) => state.time.checkIns;
+export const selectCheckIns = (state: RootState) => {
+  const checkIns = [...state.time.checkIns];
+  checkIns.sort((a, b) => b.start_time.localeCompare(a.start_time));
+  return checkIns;
+};
 
 export const selectCount = (state: RootState) => state.time.count;
 
@@ -95,6 +110,7 @@ export const selectTagCache = (state: RootState) => state.time.tagCache;
 
 export const selectTextLog = (state: RootState) => state.time.textLog;
 
-export const selectGlobalNotification = (state: RootState) => state.time.globalNotification;
+export const selectGlobalNotification = (state: RootState) =>
+  state.time.globalNotification;
 
 export default timeSlice.reducer;
